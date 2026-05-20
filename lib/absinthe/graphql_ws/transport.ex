@@ -168,6 +168,12 @@ defmodule Absinthe.GraphqlWS.Transport do
   def handle_inbound(%{"type" => "ping"}, socket),
     do: {:reply, :ok, {:text, Message.Pong.new()}, socket}
 
+  # graphql-ws spec §4.5: recipients MUST ignore pong messages they receive.
+  # Clients such as go-graphql-client respond to server-initiated pings with a
+  # {"type":"pong"} text frame; without this clause the catch-all closes the
+  # connection with 4400.
+  def handle_inbound(%{"type" => "pong"}, socket), do: {:ok, socket}
+
   def handle_inbound(msg, socket) do
     warn("unhandled message #{inspect(msg)}")
     close(4400, "Unhandled message from client", socket)
